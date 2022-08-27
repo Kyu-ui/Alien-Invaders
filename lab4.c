@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "altmem.h"
-#include "linkedlistlib.h"
-#include "invaders.h"
+#REMOVED FOR UPLOADING
 #include "code.h"
 #include "output.h"
 #include "debug.h"
