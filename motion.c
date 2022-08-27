@@ -1,56 +1,81 @@
+/* Colin Fung */
 #include <stdio.h>
+#include <math.h>
 #include "output.h"
 #include "debug.h"
+#include "motion.h"
+#include "lab4.h"
 
-
-#define colorInHex  0x70
-#define typeInHex  0x7000
-#define pointsInHex  0x1FF00000
-#define colorShift  4
-#define typeShift  12
-#define pointsShift  20
-
-/* Gets the significant digits for the Color in hex code and returns it in int form */
-int getColor(unsigned int alienCode) 
+/* used to switch the sign of VX */
+#define signSwap -1
+/* positive and neg X bounds */
+#define posXbound 39.0
+#define negXbound  -39.0
+/* decrement value of y */
+#define yDec 3
+/* Swaps the sign on VX */
+void alienBounce(unsigned int *alien, double *x, double *y, double *VX, double time)
 {
-	unsigned int isolatedBits = colorInHex;
-	int shift = colorShift;
-	/* "Turns on" the bits at 0x70 which is 1110000 in binary, then shift by 4 to get rid of zeros on the right */
-	unsigned int color = (alienCode & isolatedBits) >> shift;
-	/* If in debug, print corresponding debug statement */
-	if (DEBUG) {
-		printForDebugColor(isolatedBits, shift, alienCode, color);
-	}
-	return color;
+	/* Swaps sign */
+	*VX = *VX *signSwap;
+
+	/* y gets decremented by 3 */
+	*y = *y - yDec;
+	/*clips y to ground if neg */
+	if (*y < 0) *y = 0;
+
+	/* Prints incidental message of VX change */
+	printVXChange(alien, x, y, VX, time);
 }
 
-/* Gets the significant digits for the Type in hex code and returns it in int form */
-int getAlienType(unsigned int alienCode) 
+/* Changes the value of VX if needed */
+void negateVX(unsigned int *alien, double *x, double *y, double *VX, double time)
 {
-	unsigned int isolatedBits = typeInHex;
-	int shift = typeShift;
-	/* "Turns on" the bits at 0x7000 which is 111000000000000 in binary, then shift by 12 to get rid of zeros on the right */
-	unsigned int type = (alienCode & isolatedBits) >> shift;
-	/* If in debug, print corresponding debug statement */
-	if (DEBUG) {
-		printFordebugType(isolatedBits, shift, alienCode, type);
+	
+	/* If the alien is going out of bounds, make function return a negated VX */
+	if (*x >= posXbound && *VX > 0.0) {
+		/* Change VX will flip the sign on VX */
+		alienBounce(alien, x, y, VX, time);
 	}
-	return type;
+	else if (*x <= negXbound && *VX < 0.0) {
+		/* Change VX will flip the sign on VX */
+		alienBounce(alien, x, y, VX, time);
+	}
 }
 
-/* Gets the significant digits for the points in hex code and returns it in int form */
-int getPoints(unsigned int alienCode) 
-{
-	unsigned int isolatedBits = pointsInHex;
-	int shift = pointsShift;
-	/* "Turns on" the bits at 0x70 which is 11111111100000000000000000000 in binary, then shift by 20 to get rid of zeros on the right */
-	unsigned int points = (alienCode & isolatedBits) >> shift;
-	/* If in debug, print corresponding debug statement */
-	if (DEBUG) {
-		printForDebugPoints(isolatedBits, shift, alienCode, points);
-	}
-	return points;
+
+/* Updates the x and y values according to their corresponding velocitys */
+void updateXandY(double *x, double *y, double *VX, double *VY, unsigned int *alien, double time)
+{	
+	/* Formulas for motion equations */
+
+	*x = *x + *VX * deltaT;
+	
+	*y = *y + *VY * deltaT;
+	/* Incase x hits a corner, negates the VX so it goes the other way, Will only negate the VX if needed */
+	negateVX(alien, x, y, VX, time);
 }
 
+
+/* Moves the time by deltaT, prints corresponding  */
+void moveTime(double *time, unsigned int *alien, double *x, double *y, double *VX, double *VY) 
+{
+	/* Time is incremented by deltaT */
+	*time = *time + deltaT;
+}
+
+
+
+
+/* calls updatesXandY with right variables */
+void updateMotion(void *alienStructPtr) 
+{	
+	/* dereferences aliena nd sim pointers */
+	Alien *alienStruct = alienStructPtr;
+	Sim *simStruct = alienStruct->simStructPtr;
+	/* The & goes after -> resolves */
+	/*Updates x and y values */
+	updateXandY(&alienStruct->X, &alienStruct->Y, &alienStruct->VX, &alienStruct->VY, &alienStruct->alien, simStruct->elapsedTime);
+}
 
 
